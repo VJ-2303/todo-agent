@@ -1,0 +1,28 @@
+from tools import list_files, read_file, run_command, write_file
+
+TOOL_MAP = {
+    "read_file": read_file,
+    "list_files": list_files,
+    "write_file": write_file,
+    "run_command": run_command,
+}
+
+
+def execute_tool(action: str, args: dict) -> str:
+    """
+    Finds the requested tool in TOOL_MAP and executes it with the given arguments.
+    Returns the string result (observation) or an informative error message.
+    """
+
+    if action not in TOOL_MAP:
+        return f"Error: Tool '{action}' is not recognized. Available tools: {list(TOOL_MAP.keys())}"
+
+    tool_func = TOOL_MAP[action]
+
+    try:
+        result = tool_func(**args)
+        return str(result)
+    except TypeError as e:
+        return f"Error executing '{action}': Incorrect arguments provided ({e})."
+    except Exception as e:
+        return f"Error executing '{action}': {str(e)}"

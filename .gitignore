@@ -11,3 +11,4 @@ wheels/
 *.db
 sandbox
 test_*
+.env
