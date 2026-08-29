@@ -56,7 +56,6 @@ class TinyAgent:
         return False, observation
 
     def run(self, task: str) -> str:
-        self.reset()
         self.messages.append({"role": "user", "content": task})
 
         for current_step in range(1, self.max_steps + 1):
@@ -68,9 +67,3 @@ class TinyAgent:
 
         print("[Agent Stopped]: Maximum step limit reached without completion.\n")
         return "Task failed: Step limit reached."
-
-
-if __name__ == "__main__":
-    agent = TinyAgent()
-    task = "Create a simple portfolio with HTML/CSS/JS, keep all the files inside portfolio directory"
-    agent.run(task)
