@@ -1,3 +1,4 @@
+import config
 from tools import list_files, read_file, run_command, write_file
 
 TOOL_MAP = {
@@ -6,6 +7,16 @@ TOOL_MAP = {
     "write_file": write_file,
     "run_command": run_command,
 }
+
+
+def truncate_observation(
+    text: str, max_chars: int = config.MAX_OBSERVATION_LIMIT
+) -> str:
+    if len(text) <= max_chars:
+        return text
+    omitted_count = len(text) - max_chars
+    notice = f"\n\n[Warning: Output truncated. {omitted_count} characters omitted to preserver context window]"
+    return text[:max_chars] + notice
 
 
 def execute_tool(action: str, args: dict) -> str:
@@ -21,7 +32,7 @@ def execute_tool(action: str, args: dict) -> str:
 
     try:
         result = tool_func(**args)
-        return str(result)
+        return truncate_observation(str(result))
     except TypeError as e:
         return f"Error executing '{action}': Incorrect arguments provided ({e})."
     except Exception as e:
