@@ -6,6 +6,13 @@ import config
 from dispatcher import execute_tool
 from parser import parse_agent_response
 from prompts import build_system_prompt
+from ui import (
+    console,
+    show_final_answer,
+    show_thought,
+    show_tool_call,
+    show_tool_status,
+)
 
 
 class TinyAgent:
@@ -19,16 +26,17 @@ class TinyAgent:
         self.messages = [{"role": "system", "content": build_system_prompt()}]
 
     def step(self) -> tuple[bool, str]:
-        response = self.client.chat.completions.create(
-            model=config.MODEL_NAME,
-            messages=self.messages,
-            temperature=config.TEMPERATURE,
-        )
+        with console.status("[dim]Thinking...[/dim]", spinner="dots"):
+            response = self.client.chat.completions.create(
+                model=config.MODEL_NAME,
+                messages=self.messages,
+                temperature=config.TEMPERATURE,
+            )
         raw_output = response.choices[0].message.content or ""
         success, decision, error_msg = parse_agent_response(raw_output)
 
         if not success:
-            self.messages.append({"role": "assitant", "content": raw_output})
+            self.messages.append({"role": "assistant", "content": raw_output})
             self.messages.append(
                 {
                     "role": "user",
@@ -41,13 +49,18 @@ class TinyAgent:
         action = decision.get("action", "")
         args = decision.get("args", {})
 
-        print(f"Thought : {thought}\n")
+        show_thought(thought)
 
         if action == "final_answer":
             final_msg = args.get("message", "Task completed.")
+            self.messages.append({"role": "assistant", "content": json.dumps(decision)})
             return True, final_msg
 
+        show_tool_call(action, args)
         observation = execute_tool(action, args)
+
+        is_tool_success = not observation.startswith("Error:")
+        show_tool_status(is_tool_success)
 
         self.messages.append({"role": "assistant", "content": json.dumps(decision)})
         self.messages.append(
@@ -62,8 +75,16 @@ class TinyAgent:
             is_finished, result = self.step()
 
             if is_finished:
-                print(f"[Agent Finished]: {result}\n")
+                show_final_answer(result)
                 return result
 
-        print("[Agent Stopped]: Maximum step limit reached without completion.\n")
+        console.print(
+            "\n[bold red]Agent Stopped:[/bold red] Maximum step limit reached."
+        )
         return "Task failed: Step limit reached."
+
+
+if __name__ == "__main__":
+    agent = TinyAgent()
+    task = "List the files in the directory, then give a final answer."
+    agent.run(task)

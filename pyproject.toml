@@ -5,4 +5,5 @@ requires-python = ">=3.13"
 dependencies = [
     "openai>=3.5.0",
     "python-dotenv>=1.2.3",
+    "rich>=15.0.0",
 ]
