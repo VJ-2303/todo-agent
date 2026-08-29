@@ -25,6 +25,20 @@ def summarize_args(action: str, args: dict) -> str:
         target = args.get("path", "unknown")
         return f"[bold cyan]target:[/bold cyan] {target}"
 
+    if action == "replace_in_file":
+        target = args.get("path", "unknown")
+        return f"[bold cyan]target:[/bold cyan] {target} [dim](surgical edit)[/dim]"
+
+    if action == "grep_search":
+        query = args.get("query", "")
+        path = args.get("path", ".")
+        return f"[bold magenta]query:[/bold magenta] '{query}' [dim]in {path}[/dim]"
+
+    if action == "find_files":
+        pattern = args.get("pattern", "*")
+        directory = args.get("directory", ".")
+        return f"[bold cyan]pattern:[/bold cyan] {pattern} [dim]in {directory}[/dim]"
+
     if action == "run_command":
         cmd = args.get("command", "")
         flattened_cmd = " ".join(cmd.split())

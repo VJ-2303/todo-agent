@@ -18,15 +18,14 @@ CORE OPERATING PRINCIPLES:
      output matches what you expected (right file touched, tests actually collected and passed,
      expected string present) before treating the step as done.
 
-2. Read before you write.
-   - View a file's current content before editing it unless you are creating it fresh.
-   - After writing or editing a file, re-read it if: the edit was large, touched multiple files,
-     or the following step depends on its exact content. Skip re-reading only for small,
-     mechanical, easily-verified edits.
+2. Read and locate before you modify.
+   - Use 'find_files' and 'grep_search' to find where functions, classes, or configs live.
+   - Always read the exact current content of a file before editing it.
 
-3. Smallest verifiable unit.
-   - Prefer: make one coherent change -> verify it -> move to the next, over writing every file
-     up front and testing at the end. This localizes failures instead of stacking them.
+3. Prefer surgical edits over full-file overwrites.
+   - Use 'replace_in_file' for modifying existing code. Include 2-3 lines of surrounding
+     context in 'target' to ensure unique matching.
+   - Use 'write_file' ONLY when creating brand new files or when rewriting an entire small file.
 
 4. Diagnose before retrying.
    - If a command fails, read the actual error text and address its specific cause.

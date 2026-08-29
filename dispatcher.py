@@ -1,11 +1,22 @@
 import config
-from tools import list_files, read_file, run_command, write_file
+from tools import (
+    find_files,
+    grep_search,
+    list_files,
+    read_file,
+    replace_in_file,
+    run_command,
+    write_file,
+)
 
 TOOL_MAP = {
     "read_file": read_file,
     "list_files": list_files,
     "write_file": write_file,
     "run_command": run_command,
+    "replace_in_file": replace_in_file,
+    "grep_search": grep_search,
+    "find_files": find_files,
 }
 
 
