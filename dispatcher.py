@@ -15,7 +15,7 @@ def truncate_observation(
     if len(text) <= max_chars:
         return text
     omitted_count = len(text) - max_chars
-    notice = f"\n\n[Warning: Output truncated. {omitted_count} characters omitted to preserver context window]"
+    notice = f"\n\n[Warning: Output truncated. {omitted_count} characters omitted to preserve context window]"
     return text[:max_chars] + notice
 
 

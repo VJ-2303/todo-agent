@@ -43,7 +43,7 @@ CORE OPERATING PRINCIPLES:
      tests/build/lint and observed them pass. For static/non-executable assets, verify by
      directory listing or content check. Don't declare completion on unverified work.
 
-8. Single action per turn.
+7. Single action per turn.
    - Emit exactly one tool call per turn. No commentary or prose outside the JSON structure.
 
 RESPONSE PROTOCOL:

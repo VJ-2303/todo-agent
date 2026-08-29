@@ -26,13 +26,18 @@ class TinyAgent:
         self.messages = [{"role": "system", "content": build_system_prompt()}]
 
     def step(self) -> tuple[bool, str]:
-        with console.status("[dim]Thinking...[/dim]", spinner="dots"):
-            response = self.client.chat.completions.create(
-                model=config.MODEL_NAME,
-                messages=self.messages,
-                temperature=config.TEMPERATURE,
-            )
-        raw_output = response.choices[0].message.content or ""
+        try:
+            with console.status("[dim]Thinking...[/dim]", spinner="dots"):
+                response = self.client.chat.completions.create(
+                    model=config.MODEL_NAME,
+                    messages=self.messages,
+                    temperature=config.TEMPERATURE,
+                )
+            raw_output = response.choices[0].message.content or ""
+        except Exception as e:
+            error_msg = f"API Error: Failed to communicate with model provider: {e!s}"
+            console.print(f"\n[bold red]✗ Connection Error:[/bold red] {e!s}")
+            return True, error_msg
         success, decision, error_msg = parse_agent_response(raw_output)
 
         if not success:
@@ -60,7 +65,9 @@ class TinyAgent:
         observation = execute_tool(action, args)
 
         is_tool_success = not observation.startswith("Error:")
-        show_tool_status(is_tool_success)
+        show_tool_status(
+            is_tool_success, error_msg=observation if not is_tool_success else ""
+        )
 
         self.messages.append({"role": "assistant", "content": json.dumps(decision)})
         self.messages.append(

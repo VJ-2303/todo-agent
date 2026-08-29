@@ -1,6 +1,5 @@
 import sys
 
-from rich.panel import Panel
 from rich.table import Table
 
 from agent import TinyAgent
@@ -53,6 +52,9 @@ def main():
 
             elif command in ("/reset", "/clear"):
                 agent.reset()
+                console.print(
+                    "[bold green]✓ Agent conversation memory has been reset.[/bold green]\n"
+                )
                 continue
 
             elif command == "/help":

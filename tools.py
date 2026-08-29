@@ -12,7 +12,7 @@ def list_files(directory=".") -> str:
             return f"Directory '{directory}' is empty."
         return "\n".join(entries)
     except Exception as e:
-        return f"Error listing directory '{directory}' : {e!s}"
+        return f"Error: listing directory '{directory}' : {e!s}"
 
 
 def read_file(path: str) -> str:
@@ -22,7 +22,7 @@ def read_file(path: str) -> str:
         with open(path, "r", encoding="utf-8") as f:
             return f.read()
     except Exception as e:
-        return f"Error reading file '{path}' : {e!s}"
+        return f"Error: reading file '{path}' : {e!s}"
 
 
 def write_file(path: str, content: str) -> str:
@@ -37,7 +37,7 @@ def write_file(path: str, content: str) -> str:
             f.write(content)
         return f"Successfully wrote to {path}."
     except Exception as e:
-        return f"Error writing to file {path} : {e!s}"
+        return f"Error: writing to file {path} : {e!s}"
 
 
 def run_command(command: str) -> str:
@@ -46,16 +46,15 @@ def run_command(command: str) -> str:
         result = subprocess.run(
             command, shell=True, capture_output=True, text=True, timeout=30
         )
-        output = []
+        output = [f"Exit Code: {result.returncode}"]
         if result.stdout:
             output.append(f"STDOUT:\n{result.stdout.strip()}")
         if result.stderr:
             output.append(f"STDERR:\n{result.stderr.strip()}")
-        if not output:
-            return f"Command executed successfully with exit code {result.returncode} (no output)."
-
+        if len(output) == 1:
+            output.append("(No output produced)")
         return "\n\n".join(output)
     except subprocess.TimeoutExpired:
         return f"Error: Command '{command} timed out after 30 seconds.'"
     except Exception as e:  # noqa: BLE001
-        return f"Error executing command '{command}': {e!s}"
+        return f"Error: executing command '{command}': {e!s}"
