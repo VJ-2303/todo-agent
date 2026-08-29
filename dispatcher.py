@@ -1,11 +1,13 @@
 import config
 from tools import (
+    fetch_web_page,
     find_files,
     grep_search,
     list_files,
     read_file,
     replace_in_file,
     run_command,
+    search_web,
     write_file,
 )
 
@@ -17,6 +19,8 @@ TOOL_MAP = {
     "replace_in_file": replace_in_file,
     "grep_search": grep_search,
     "find_files": find_files,
+    "search_web": search_web,
+    "fetch_web_page": fetch_web_page,
 }
 
 
@@ -45,6 +49,6 @@ def execute_tool(action: str, args: dict) -> str:
         result = tool_func(**args)
         return truncate_observation(str(result))
     except TypeError as e:
-        return f"Error executing '{action}': Incorrect arguments provided ({e})."
+        return f"Error: executing '{action}': Incorrect arguments provided ({e})."
     except Exception as e:
-        return f"Error executing '{action}': {str(e)}"
+        return f"Error: executing '{action}': {str(e)}"

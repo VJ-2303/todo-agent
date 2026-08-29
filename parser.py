@@ -10,6 +10,9 @@ def extract_json_block(raw_text: str) -> Optional[str]:
     """
     text = raw_text.strip()
 
+    text = re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE).strip()
+    text = re.sub(r"<\|channel\|>[\s\S]*?<\|message\|>", "", text).strip()
+
     code_block_pattern = r"```(?:json)?\s*([\s\S]*?)\s*```"
     match = re.search(code_block_pattern, text, re.IGNORECASE)
     if match:

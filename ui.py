@@ -49,6 +49,13 @@ def summarize_args(action: str, args: dict) -> str:
     if action == "list_files":
         directory = args.get("directory", ".")
         return f"[bold cyan]dir:[/bold cyan] {directory}"
+    if action == "search_web":
+        query = args.get("query", "")
+        return f"[bold magenta]search:[/bold magenta] '{query}'"
+
+    if action == "fetch_web_page":
+        url = args.get("url", "")
+        return f"[bold cyan]url:[/bold cyan] {url}"
 
     return f"[dim]{str(args)}[/dim]"
 
@@ -69,6 +76,61 @@ def show_tool_status(success: bool, error_msg: str = ""):
     """Displays status only when a failure occurs to reduce vertical noise."""
     if not success:
         console.print(f"   [bold red]✗ Failed:[/bold red] [dim]{error_msg}[/dim]")
+
+
+def ask_user_questions(args: dict) -> str:
+    questions = args.get("questions", [])
+
+    if not questions:
+        return "No questions provided."
+
+    console.print()
+    console.print(
+        Panel(
+            "[bold yellow]The agent needs clarification before proceeding:[/bold yellow]",
+            title="[bold cyan]Clarification Requested[/bold cyan]",
+            border_style="yellow",
+        )
+    )
+    responses = []
+
+    for index, q_item in enumerate(questions, start=1):
+        q_text = q_item.get("question", "Clarification needed:")
+        options = q_item.get("options", [])
+
+        console.print(
+            f"\n[bold white]Question {index}:[/bold white] [bold cyan]{q_text}[/bold cyan]"
+        )
+        if options:
+            for opt_idx, opt in enumerate(options, start=1):
+                console.print(f"  [bold green][{opt_idx}][/bold green] {opt}")
+
+            while True:
+                user_choice = console.input(
+                    "[bold yellow]Enter choice number or custom answer: [/bold yellow]"
+                ).strip()
+                if not user_choice:
+                    console.print("[dim red]Answer cannot be empty.[/dim red]")
+                    continue
+                if user_choice.isdigit():
+                    selected_num = int(user_choice)
+                    if 1 <= selected_num <= len(options):
+                        final_answer = options[selected_num - 1]
+                        break
+                final_answer = user_choice
+                break
+
+        else:
+            while True:
+                user_choice = console.input(
+                    "[bold yellow]Your answer: [/bold yellow]"
+                ).strip()
+                if user_choice:
+                    final_answer = user_choice
+                    break
+                console.print("[dim red]Answer cannot be empty.[/dim red]")
+
+        responses.append(f"{index}. {q_text} -> {final_answer}")
 
 
 def show_final_answer(message: str):

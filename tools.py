@@ -3,6 +3,9 @@ import os
 import re
 import subprocess
 
+from ddgs import DDGS
+from trafilatura import extract, fetch_url
+
 
 def list_files(directory=".") -> str:
     """List files and directories in the specified path."""
@@ -244,3 +247,48 @@ def find_files(
         output += f"\n\n[Note: Output capped at {max_results} files.]"
 
     return output
+
+
+def search_web(query: str, max_results: int = 5) -> str:
+    """Searches DuckDuckGo and returns formatted titles, URLs, and snippets."""
+    try:
+        results = []
+        with DDGS() as ddgs:
+            for idx, r in enumerate(ddgs.text(query, max_results=max_results), start=1):
+                title = r.get("title", "No Title")
+                url = r.get("href", "")
+                snippet = r.get("body", "")
+                results.append(f"{idx}. [{title}]({url})\n   {snippet}")
+
+        if not results:
+            return f"No search results found for query: '{query}'"
+        return "WEB SEARCH RESULTS:\n\n" + "\n\n".join(results)
+    except Exception as e:
+        return f"Error: Web search failed: {e!s}"
+
+
+def fetch_web_page(url: str, max_chars: int = 8000) -> str:
+    """Fetches a webpage and converts its main body into clean Markdown."""
+    try:
+        downloaded = fetch_url(url)
+        if not downloaded:
+            return f"Error: Could not download content from '{url}'."
+
+        markdown_content = extract(
+            downloaded,
+            output_format="markdown",
+            include_links=True,
+            favor_precision=True,
+        )
+        if not markdown_content:
+            return f"Error: Could not extract readable text from '{url}'."
+
+        if len(markdown_content) > max_chars:
+            markdown_content = (
+                markdown_content[:max_chars]
+                + "\n\n[Warning: Web page content truncated to preserve context window]"
+            )
+
+        return f"PAGE CONTENT FROM {url}:\n\n{markdown_content}"
+    except Exception as e:
+        return f"Error: Failed to fetch webpage '{url}': {e!s}"

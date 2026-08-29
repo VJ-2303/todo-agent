@@ -7,6 +7,7 @@ from dispatcher import execute_tool
 from parser import parse_agent_response
 from prompts import build_system_prompt
 from ui import (
+    ask_user_questions,
     console,
     show_final_answer,
     show_thought,
@@ -23,7 +24,7 @@ class TinyAgent:
         self.reset()
 
     def reset(self):
-        self.messages = [{"role": "system", "content": build_system_prompt()}]
+        self.messages = []
 
     def step(self) -> tuple[bool, str]:
         try:
@@ -61,6 +62,17 @@ class TinyAgent:
             self.messages.append({"role": "assistant", "content": json.dumps(decision)})
             return True, final_msg
 
+        if action == "ask_user":
+            user_answers = ask_user_questions(args)
+            self.messages.append({"role": "assistant", "content": json.dumps(decision)})
+            self.messages.append(
+                {
+                    "role": "user",
+                    "content": f"CLARIFICATION OBSERVATION:\n{user_answers}",
+                }
+            )
+            return False, user_answers
+
         show_tool_call(action, args)
         observation = execute_tool(action, args)
 
@@ -76,7 +88,11 @@ class TinyAgent:
         return False, observation
 
     def run(self, task: str) -> str:
-        self.messages.append({"role": "user", "content": task})
+        if not self.messages:
+            initial_prompt = f"{build_system_prompt()}\n\n---\nUSER TASK:\n{task}"
+            self.messages.append({"role": "user", "content": initial_prompt})
+        else:
+            self.messages.append({"role": "user", "content": task})
 
         for current_step in range(1, self.max_steps + 1):
             is_finished, result = self.step()
@@ -89,9 +105,3 @@ class TinyAgent:
             "\n[bold red]Agent Stopped:[/bold red] Maximum step limit reached."
         )
         return "Task failed: Step limit reached."
-
-
-if __name__ == "__main__":
-    agent = TinyAgent()
-    task = "List the files in the directory, then give a final answer."
-    agent.run(task)

@@ -52,6 +52,21 @@ TOOLS = [
         "description": "Execute a shell command on Linux and returns stdout/stderr output.",
         "parameters": {"command": "string (required, the bash command to run)"},
     },
+    {
+        "name": "search_web",
+        "description": "Search the live web to find documentation, libraries, and code solutions.",
+        "parameters": {
+            "query": "string (required, search keywords or error message)",
+            "max_results": "integer (optional, number of results to return, default 5)",
+        },
+    },
+    {
+        "name": "fetch_web_page",
+        "description": "Download and read the main content of a webpage/documentation URL as clean Markdown.",
+        "parameters": {
+            "url": "string (required, the full HTTP/HTTPS URL to fetch)",
+        },
+    },
 ]
 
 
