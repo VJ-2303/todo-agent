@@ -78,7 +78,7 @@ def replace_in_file(path: str, target: str, replacement: str) -> str:
             return f"Error: Target string not found in '{path}'."
 
         if match_count > 1:
-            f"Error: Target string matched {match_count} times in {path}. Provide more surrounding context lines."
+            return f"Error: Target string matched {match_count} times in {path}. Provide more surrounding context lines."
 
         new_content = content.replace(target, replacement, 1)
 
