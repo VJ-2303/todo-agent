@@ -4,6 +4,7 @@ version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
     "ddgs>=9.16.0",
+    "litellm>=1.83.0",
     "openai>=3.5.0",
     "python-dotenv>=1.2.3",
     "rich>=15.0.0",

@@ -258,6 +258,8 @@ def search_web(query: str, max_results: int = 5) -> str:
                 title = r.get("title", "No Title")
                 url = r.get("href", "")
                 snippet = r.get("body", "")
+                if len(snippet) > 160:
+                    snippet = snippet[:157] + "..."
                 results.append(f"{idx}. [{title}]({url})\n   {snippet}")
 
         if not results:

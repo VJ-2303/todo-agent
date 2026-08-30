@@ -1,9 +1,9 @@
 import json
 import re
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 
-def extract_json_block(raw_text: str) -> Optional[str]:
+def extract_json_block(raw_text: str) -> str | None:
     """
     Finds and extracts the outermost JSON block from text,
     ignoring markdown code fences and conversational filler.
@@ -29,7 +29,7 @@ def extract_json_block(raw_text: str) -> Optional[str]:
     return None
 
 
-def parse_agent_response(raw_text: str) -> Tuple[bool, Optional[Dict[str, Any]], str]:
+def parse_agent_response(raw_text: str) -> tuple[bool, dict[str, Any] | None, str]:
     """
     Parses the model's raw text into a validated dictionary.
     Returns:
@@ -49,7 +49,7 @@ def parse_agent_response(raw_text: str) -> Tuple[bool, Optional[Dict[str, Any]],
             sanitized = re.sub(r"(?<!\\)\n", r"\\n", candidate)
             data = json.loads(sanitized)
         except json.JSONDecodeError:
-            return False, None, f"Malformed JSON syntax: {str(e)}"
+            return False, None, f"Malformed JSON syntax: {e!s}"
 
     if not isinstance(data, dict):
         return (

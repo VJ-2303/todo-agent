@@ -29,7 +29,7 @@ def print_tools():
     tool_table.add_column("Tool Name", style="bold green")
     tool_table.add_column("Purpose")
     for tool in TOOLS:
-        tool_table.add_row(tool["name"], tool["description"])
+        tool_table.add_row(tool["name"], tool["description"])  # ty: ignore[invalid-argument-type]
     console.print(tool_table)
     console.print()
 

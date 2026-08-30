@@ -1,9 +1,8 @@
 import json
 
-from openai import OpenAI
-
 import config
 from dispatcher import execute_tool
+from llm import LLMClient
 from parser import parse_agent_response
 from prompts import build_system_prompt
 from ui import (
@@ -19,7 +18,7 @@ from ui import (
 class TinyAgent:
     def __init__(self):
         self.max_steps = config.MAX_STEPS
-        self.client = OpenAI(base_url=config.API_BASE_URL, api_key=config.API_KEY)
+        self.llm = LLMClient()
         self.messages = []
         self.reset()
 
@@ -29,20 +28,14 @@ class TinyAgent:
     def step(self) -> tuple[bool, str]:
         try:
             with console.status("[dim]Thinking...[/dim]", spinner="dots"):
-                response = self.client.chat.completions.create(
-                    model=config.MODEL_NAME,
-                    messages=self.messages,
-                    temperature=config.TEMPERATURE,
-                )
-            raw_output = response.choices[0].message.content or ""
+                llm_response = self.llm.generate(self.messages)
         except Exception as e:
-            error_msg = f"API Error: Failed to communicate with model provider: {e!s}"
             console.print(f"\n[bold red]✗ Connection Error:[/bold red] {e!s}")
-            return True, error_msg
-        success, decision, error_msg = parse_agent_response(raw_output)
+            return True, str(e)
+        success, decision, error_msg = parse_agent_response(llm_response.content)
 
         if not success:
-            self.messages.append({"role": "assistant", "content": raw_output})
+            self.messages.append({"role": "assistant", "content": llm_response.content})
             self.messages.append(
                 {
                     "role": "user",
@@ -51,7 +44,9 @@ class TinyAgent:
             )
             return False, error_msg
 
-        thought = decision.get("thought", "No Thought provided")
+        thought = (
+            decision.get("thought") or llm_response.thinking or "Execution next step"
+        )
         action = decision.get("action", "")
         args = decision.get("args", {})
 
