@@ -1,4 +1,5 @@
 import config
+from models import ToolResult
 from tools import (
     fetch_web_page,
     find_files,
@@ -26,29 +27,41 @@ TOOL_MAP = {
 
 def truncate_observation(
     text: str, max_chars: int = config.MAX_OBSERVATION_LIMIT
-) -> str:
+) -> tuple[str, bool]:
     if len(text) <= max_chars:
-        return text
+        return text, False
     omitted_count = len(text) - max_chars
     notice = f"\n\n[Warning: Output truncated. {omitted_count} characters omitted to preserve context window]"
-    return text[:max_chars] + notice
+    return text[:max_chars] + notice, True
 
 
-def execute_tool(action: str, args: dict) -> str:
+def execute_tool(action: str, args: dict) -> ToolResult:
     """
     Finds the requested tool in TOOL_MAP and executes it with the given arguments.
     Returns the string result (observation) or an informative error message.
     """
 
     if action not in TOOL_MAP:
-        return f"Error: Tool '{action}' is not recognized. Available tools: {list(TOOL_MAP.keys())}"
+        available = list(TOOL_MAP.keys())
+        err = f"Error: Tool {action} is not recognized. Available tools: {available}"
+        return ToolResult(success=False, output=err, error=err)
 
     tool_func = TOOL_MAP[action]
 
     try:
-        result = tool_func(**args)
-        return truncate_observation(str(result))
+        raw_text = str(tool_func(**args))
+        truncated_text, is_truncated = truncate_observation(raw_text)
+        is_success = not truncated_text.startswith("Error:")
+
+        return ToolResult(
+            success=is_success,
+            output=truncated_text,
+            error=truncated_text if not is_success else None,
+            truncated=is_truncated,
+        )
     except TypeError as e:
-        return f"Error: executing '{action}': Incorrect arguments provided ({e})."
+        err = f"Error executing '{action}': Incorrect arguments provided ({e})."
+        return ToolResult(success=False, output=err, error=err)
     except Exception as e:
-        return f"Error: executing '{action}': {str(e)}"
+        err = f"Error executing '{action}': {e!s}"
+        return ToolResult(success=False, output=err, error=err)

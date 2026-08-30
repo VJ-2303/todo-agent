@@ -60,7 +60,7 @@ def summarize_args(action: str, args: dict) -> str:
     return f"[dim]{str(args)}[/dim]"
 
 
-def show_thought(thought: str, step_num: int = None):
+def show_thought(thought: str, step_num: int | None):
     """Renders reasoning with an optional compact step counter."""
     step_prefix = f"[bold dim][{step_num}][/bold dim] " if step_num else ""
     console.print(f"\n{step_prefix}[dim italic cyan]💭 {thought}[/dim italic cyan]")
@@ -130,7 +130,7 @@ def ask_user_questions(args: dict) -> str:
                     break
                 console.print("[dim red]Answer cannot be empty.[/dim red]")
 
-        responses.append(f"{index}. {q_text} -> {final_answer}")
+        return responses.append(f"{index}. {q_text} -> {final_answer}")
 
 
 def show_final_answer(message: str):

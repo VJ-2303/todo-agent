@@ -22,9 +22,7 @@ class LLMClient:
         self.temperature = config.TEMPERATURE
         self.model_identifier = "openai/" + config.MODEL_NAME
 
-    def generate(
-        self, messages: list[dict[str, str]], max_tokens: int = 4096
-    ) -> LLMResponse:
+    def generate(self, messages: list[dict[str, str]]) -> LLMResponse:
         """Calls the model via LiteLLM and returns clean content & thinking."""
         try:
             response = completion(
@@ -33,7 +31,6 @@ class LLMClient:
                 api_base=self.api_base,
                 api_key=self.api_key,
                 temperature=self.temperature,
-                max_tokens=max_tokens,
             )
 
             msg = response.choices[0].message

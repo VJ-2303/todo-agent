@@ -1,6 +1,7 @@
 import json
 import re
-from typing import Any
+
+from models import AgentDecision
 
 
 def extract_json_block(raw_text: str) -> str | None:
@@ -29,7 +30,7 @@ def extract_json_block(raw_text: str) -> str | None:
     return None
 
 
-def parse_agent_response(raw_text: str) -> tuple[bool, dict[str, Any] | None, str]:
+def parse_agent_response(raw_text: str) -> tuple[bool, AgentDecision | None, str]:
     """
     Parses the model's raw text into a validated dictionary.
     Returns:
@@ -62,10 +63,15 @@ def parse_agent_response(raw_text: str) -> tuple[bool, dict[str, Any] | None, st
     if not action:
         return False, None, "Missing required key: 'action'."
 
+    thought = data.get("thought", "No thought provided.")
+
     args = data.get("args")
     if args is None:
         data["args"] = {}
     elif not isinstance(args, dict):
         return False, None, "The 'args' field must be an object/dictionary."
 
-    return True, data, ""
+    decision = AgentDecision(
+        thought=str(thought), action=str(action), args=args, raw_json=candidate
+    )
+    return True, decision, ""
