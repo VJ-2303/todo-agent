@@ -8,6 +8,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 import config
+from models import TaskStatus, TodoItem
 
 console = Console()
 
@@ -113,6 +114,24 @@ def summarize_args(action: str, args: dict) -> tuple[str, str]:
             "[bold black on bright_cyan] FETCH [/bold black on bright_cyan]",
             f"[bright_cyan]{url}[/bright_cyan]",
         )
+    if action == "manage_todos":
+        act = escape(str(args.get("action", "list")))
+        if act == "update":
+            tid = args.get("todo_id", "?")
+            st = args.get("status", "?")
+            detail = f"update #{tid} -> [bold bright_yellow]{st}[/bold bright_yellow]"
+        elif act == "init":
+            count = len(args.get("todos", []))
+            detail = f"init [bold bright_cyan]{count} subtasks[/bold bright_cyan]"
+        elif act == "add":
+            title = escape(str(args.get("title", "")))
+            detail = f"add '[bright_cyan]{title}[/bright_cyan]'"
+        else:
+            detail = "list tasks"
+        return (
+            "[bold black on bright_blue] TODOS [/bold black on bright_blue]",
+            detail,
+        )
 
     return (
         f"[bold black on white] {escape(action.upper())} [/bold black on white]",
@@ -209,6 +228,38 @@ def ask_user_questions(args: dict) -> str:
 
     console.print()
     return "USER RESPONSES:\n" + "\n".join(responses)
+
+
+def show_todos_board(todos: list[TodoItem]):
+    """Renders a sleek, minimal subtask progress board."""
+    if not todos:
+        return
+
+    table = Table(box=box.SIMPLE_HEAD, expand=True, padding=(0, 1))
+    table.add_column("#", justify="center", style="dim", width=4)
+    table.add_column("Status", width=14)
+    table.add_column("Subtask", style="bold bright_white")
+
+    for item in todos:
+        if item.status == TaskStatus.COMPLETED:
+            status_badge = "[bold green]✓ COMPLETED[/bold green]"
+            title_styled = f"[dim strike bright_white]{escape(item.title)}[/dim strike bright_white]"
+        else:
+            status_badge = "[dim]PENDING[/dim]"
+            title_styled = escape(item.title)
+
+        table.add_row(str(item.id), status_badge, title_styled)
+
+    console.print()
+    console.print(
+        Panel(
+            table,
+            title="[bold bright_cyan]📋 Active Task Plan[/bold bright_cyan]",
+            border_style="bright_cyan",
+            box=box.ROUNDED,
+            padding=(0, 1),
+        )
+    )
 
 
 def show_final_answer(message: str):

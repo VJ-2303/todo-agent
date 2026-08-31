@@ -2,6 +2,17 @@ import json
 
 TOOLS = [
     {
+        "name": "manage_todos",
+        "description": "Initialize, update, or append to the subtask list to track progress.",
+        "parameters": {
+            "action": "string (required, one of: 'init', 'update', 'add', 'list')",
+            "todos": "list of objects (required for 'init', e.g. [{'id': 1, 'title': 'Inspect codebase', 'status': 'pending'}])",
+            "todo_id": "integer (required for 'update', numeric ID of the subtask)",
+            "status": "string (required for 'update', one of: 'pending', 'completed')",
+            "title": "string (required for 'add', title of new subtask)",
+        },
+    },
+    {
         "name": "list_files",
         "description": "List files and directories in a given directory path.",
         "parameters": {"directory": "string (optional, default to '.')"},
