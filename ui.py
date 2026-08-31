@@ -22,7 +22,7 @@ def show_banner():
     banner_grid.add_column(justify="right", ratio=2)
 
     banner_grid.add_row(
-        "[bold bright_white]⚡ Tiny Terminal Coding Agent[/bold bright_white]",
+        "[bold bright_white]⭐ StarAgent[/bold bright_white]",
         f"[dim]model:[/dim] [bold bright_cyan]{escape(model_name)}[/bold bright_cyan]  [dim]dir:[/dim] [bold bright_yellow]{escape(dir_name)}[/bold bright_yellow]",
     )
     banner_grid.add_row(

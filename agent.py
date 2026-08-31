@@ -16,7 +16,7 @@ from ui import (
 )
 
 
-class TinyAgent:
+class StarAgent:
     def __init__(self):
         self.state = AgentState(task="", max_steps=config.MAX_STEPS)
         self.llm = LLMClient()

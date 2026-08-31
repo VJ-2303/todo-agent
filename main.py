@@ -2,7 +2,7 @@ import sys
 
 from rich.table import Table
 
-from agent import TinyAgent
+from agent import StarAgent
 from schemas import TOOLS
 from ui import console, show_banner
 
@@ -36,7 +36,7 @@ def print_tools():
 
 def main():
     show_banner()
-    agent = TinyAgent()
+    agent = StarAgent()
 
     while True:
         try:
@@ -47,7 +47,7 @@ def main():
 
             command = user_input.lower()
             if command in ("/exit", "/quit"):
-                console.print("\n[dim]Shutting down Tiny Agent. Goodbye![/dim]")
+                console.print("\n[dim]Shutting down StarAgent. Goodbye![/dim]")
                 break
 
             elif command in ("/reset", "/clear"):
