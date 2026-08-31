@@ -67,7 +67,7 @@ def parse_agent_response(raw_text: str) -> tuple[bool, AgentDecision | None, str
 
     args = data.get("args")
     if args is None:
-        data["args"] = {}
+        args = {}
     elif not isinstance(args, dict):
         return False, None, "The 'args' field must be an object/dictionary."
 

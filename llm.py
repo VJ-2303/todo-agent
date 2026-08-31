@@ -31,6 +31,7 @@ class LLMClient:
                 api_base=self.api_base,
                 api_key=self.api_key,
                 temperature=self.temperature,
+                max_tokens=4096,
             )
 
             msg = response.choices[0].message

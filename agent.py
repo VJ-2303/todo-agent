@@ -43,15 +43,21 @@ class TinyAgent:
                 'Please output strictly a single valid JSON object: {"thought": "...", "action": "tool_name", "args": {...}}'
             )
             self.state.add_message(MessageRole.USER, retry_prompt, step_num=step_num)
-            return False, ""
+            console.print(f"  [dim yellow]⚠ Response format issue ({error_msg}) — Retrying step...[/dim yellow]")
+            return False, error_msg
 
         thought_text = decision.thought or llm_response.thinking
         show_thought(thought_text, step_num)
 
+        # Serialize clean JSON payload for message history
+        assistant_payload = decision.raw_json or json.dumps(
+            {"thought": decision.thought, "action": decision.action, "args": decision.args}
+        )
+
         if decision.is_final_answer:
             final_msg = decision.args.get("message", "Task completed.")
             self.state.add_message(
-                MessageRole.ASSISTANT, json.dumps(decision.__dict__), step_num
+                MessageRole.ASSISTANT, assistant_payload, step_num
             )
             self.state.is_finished = True
             self.state.final_result = final_msg
@@ -60,12 +66,12 @@ class TinyAgent:
         if decision.is_clarification:
             user_answer = ask_user_questions(decision.args)
             self.state.add_message(
-                MessageRole.ASSISTANT, json.dumps(decision.__dict__), step_num
+                MessageRole.ASSISTANT, assistant_payload, step_num
             )
             self.state.add_message(
                 MessageRole.USER, f"CLARIFICATION OBSERVATION:\n{user_answer}", step_num
             )
-            return False, ""
+            return False, user_answer
 
         show_tool_call(decision.action, decision.args)
         result = execute_tool(decision.action, decision.args)
@@ -73,13 +79,13 @@ class TinyAgent:
         show_tool_status(result.success, error_msg=result.error or "")
 
         self.state.add_message(
-            MessageRole.ASSISTANT, json.dumps(decision.__dict__), step_num
+            MessageRole.ASSISTANT, assistant_payload, step_num
         )
         self.state.add_message(
             MessageRole.USER, result.to_observation_text(decision.action), step_num
         )
 
-        return False, ""
+        return False, result.output
 
     def run(self, task: str) -> str:
         self.state.task = task

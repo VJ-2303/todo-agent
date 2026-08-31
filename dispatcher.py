@@ -35,23 +35,30 @@ def truncate_observation(
     return text[:max_chars] + notice, True
 
 
-def execute_tool(action: str, args: dict) -> ToolResult:
+def execute_tool(action: str, args: dict | None = None) -> ToolResult:
     """
     Finds the requested tool in TOOL_MAP and executes it with the given arguments.
-    Returns the string result (observation) or an informative error message.
+    Returns a typed ToolResult with accurate success detection.
     """
-
     if action not in TOOL_MAP:
         available = list(TOOL_MAP.keys())
-        err = f"Error: Tool {action} is not recognized. Available tools: {available}"
+        err = f"Error: Tool '{action}' is not recognized. Available tools: {available}"
         return ToolResult(success=False, output=err, error=err)
 
     tool_func = TOOL_MAP[action]
+    tool_args = args if isinstance(args, dict) else {}
 
     try:
-        raw_text = str(tool_func(**args))
+        raw_text = str(tool_func(**tool_args))
         truncated_text, is_truncated = truncate_observation(raw_text)
-        is_success = not truncated_text.startswith("Error:")
+
+        # Accurate success evaluation:
+        # 1. Any error returned by tool functions starting with "Error:"
+        # 2. For shell commands, verify zero exit code ("Exit Code: 0")
+        if action == "run_command":
+            is_success = truncated_text.startswith("Exit Code: 0")
+        else:
+            is_success = not truncated_text.startswith("Error:")
 
         return ToolResult(
             success=is_success,

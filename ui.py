@@ -1,84 +1,155 @@
+import os
+
+from rich import box
 from rich.console import Console
 from rich.markdown import Markdown
+from rich.markup import escape
 from rich.panel import Panel
+from rich.table import Table
+
+import config
 
 console = Console()
 
 
 def show_banner():
-    """Displays the startup header."""
+    """Displays a sleek modern startup header with runtime metadata."""
+    model_name = config.MODEL_NAME or "default-model"
+    dir_name = os.path.basename(os.getcwd()) or "workspace"
+
+    banner_grid = Table.grid(expand=True, padding=(0, 1))
+    banner_grid.add_column(justify="left", ratio=3)
+    banner_grid.add_column(justify="right", ratio=2)
+
+    banner_grid.add_row(
+        "[bold bright_white]⚡ Tiny Terminal Coding Agent[/bold bright_white]",
+        f"[dim]model:[/dim] [bold bright_cyan]{escape(model_name)}[/bold bright_cyan]  [dim]dir:[/dim] [bold bright_yellow]{escape(dir_name)}[/bold bright_yellow]",
+    )
+    banner_grid.add_row(
+        "[dim]Autonomous ReAct Engineering Assistant[/dim]",
+        "[dim]Commands: [bold cyan]/help[/bold cyan] · [bold cyan]/tools[/bold cyan] · [bold cyan]/reset[/bold cyan] · [bold cyan]/exit[/bold cyan][/dim]",
+    )
+
+    console.print()
     console.print(
         Panel(
-            "[bold white]Tiny Terminal Coding Agent[/bold white]\n"
-            "[dim]Autonomous ReAct assistant powered by local LLM[/dim]\n"
-            "[dim]Commands: [bold cyan]/help[/bold cyan], [bold cyan]/reset[/bold cyan], [bold cyan]/exit[/bold cyan][/dim]",
-            title="[bold green]Workspace Active[/bold green]",
-            border_style="green",
-            expand=False,
+            banner_grid,
+            box=box.ROUNDED,
+            border_style="bright_blue",
+            padding=(0, 1),
         )
+    )
+    console.print()
+
+
+def summarize_args(action: str, args: dict) -> tuple[str, str]:
+    """
+    Extracts high-signal arguments and returns a styled badge tag + formatted details.
+    """
+    if action == "read_file":
+        target = escape(str(args.get("path", "unknown")))
+        return (
+            "[bold black on bright_cyan] READ [/bold black on bright_cyan]",
+            f"[bright_white]{target}[/bright_white]",
+        )
+
+    if action == "write_file":
+        target = escape(str(args.get("path", "unknown")))
+        return (
+            "[bold black on bright_green] WRITE [/bold black on bright_green]",
+            f"[bright_white]{target}[/bright_white]",
+        )
+
+    if action == "replace_in_file":
+        target = escape(str(args.get("path", "unknown")))
+        return (
+            "[bold black on bright_yellow] EDIT [/bold black on bright_yellow]",
+            f"[bright_white]{target}[/bright_white] [dim](surgical edit)[/dim]",
+        )
+
+    if action == "run_command":
+        cmd = str(args.get("command", ""))
+        flattened_cmd = " ".join(cmd.split())
+        if len(flattened_cmd) > 70:
+            flattened_cmd = flattened_cmd[:67] + "..."
+        return (
+            "[bold black on yellow] RUN [/bold black on yellow]",
+            f"[yellow]{escape(flattened_cmd)}[/yellow]",
+        )
+
+    if action == "grep_search":
+        query = escape(str(args.get("query", "")))
+        path = escape(str(args.get("path", ".")))
+        return (
+            "[bold black on bright_magenta] GREP [/bold black on bright_magenta]",
+            f"query [bright_magenta]'{query}'[/bright_magenta] in [dim]{path}[/dim]",
+        )
+
+    if action == "find_files":
+        pattern = escape(str(args.get("pattern", "*")))
+        directory = escape(str(args.get("directory", ".")))
+        return (
+            "[bold black on cyan] FIND [/bold black on cyan]",
+            f"pattern [bright_cyan]'{pattern}'[/bright_cyan] in [dim]{directory}[/dim]",
+        )
+
+    if action == "list_files":
+        directory = escape(str(args.get("directory", ".")))
+        return (
+            "[bold black on blue] LIST [/bold black on blue]",
+            f"dir [bright_white]{directory}[/bright_white]",
+        )
+
+    if action == "search_web":
+        query = escape(str(args.get("query", "")))
+        return (
+            "[bold black on bright_magenta] WEB [/bold black on bright_magenta]",
+            f"search [bright_magenta]'{query}'[/bright_magenta]",
+        )
+
+    if action == "fetch_web_page":
+        url = escape(str(args.get("url", "")))
+        return (
+            "[bold black on bright_cyan] FETCH [/bold black on bright_cyan]",
+            f"[bright_cyan]{url}[/bright_cyan]",
+        )
+
+    return (
+        f"[bold black on white] {escape(action.upper())} [/bold black on white]",
+        f"[dim]{escape(str(args))}[/dim]",
     )
 
 
-def summarize_args(action: str, args: dict) -> str:
-    """Extracts high-signal information and flattens newlines."""
-    if action in ("write_file", "read_file"):
-        target = args.get("path", "unknown")
-        return f"[bold cyan]target:[/bold cyan] {target}"
+def show_thought(thought: str, step_num: int | None = None):
+    """Renders agent thought with a high-contrast step badge."""
+    if step_num:
+        step_badge = f"[bold black on bright_cyan] STEP {step_num:02d} [/bold black on bright_cyan] "
+    else:
+        step_badge = ""
 
-    if action == "replace_in_file":
-        target = args.get("path", "unknown")
-        return f"[bold cyan]target:[/bold cyan] {target} [dim](surgical edit)[/dim]"
-
-    if action == "grep_search":
-        query = args.get("query", "")
-        path = args.get("path", ".")
-        return f"[bold magenta]query:[/bold magenta] '{query}' [dim]in {path}[/dim]"
-
-    if action == "find_files":
-        pattern = args.get("pattern", "*")
-        directory = args.get("directory", ".")
-        return f"[bold cyan]pattern:[/bold cyan] {pattern} [dim]in {directory}[/dim]"
-
-    if action == "run_command":
-        cmd = args.get("command", "")
-        flattened_cmd = " ".join(cmd.split())
-        if len(flattened_cmd) > 65:
-            flattened_cmd = flattened_cmd[:62] + "..."
-        return f"[bold yellow]cmd:[/bold yellow] [dim]{flattened_cmd}[/dim]"
-
-    if action == "list_files":
-        directory = args.get("directory", ".")
-        return f"[bold cyan]dir:[/bold cyan] {directory}"
-    if action == "search_web":
-        query = args.get("query", "")
-        return f"[bold magenta]search:[/bold magenta] '{query}'"
-
-    if action == "fetch_web_page":
-        url = args.get("url", "")
-        return f"[bold cyan]url:[/bold cyan] {url}"
-
-    return f"[dim]{str(args)}[/dim]"
-
-
-def show_thought(thought: str, step_num: int | None):
-    """Renders reasoning with an optional compact step counter."""
-    step_prefix = f"[bold dim][{step_num}][/bold dim] " if step_num else ""
-    console.print(f"\n{step_prefix}[dim italic cyan]💭 {thought}[/dim italic cyan]")
+    console.print(f"\n{step_badge}[bright_cyan]💭 {escape(thought)}[/bright_cyan]")
 
 
 def show_tool_call(action: str, args: dict):
-    """Displays a single compact line for tool execution."""
-    summary = summarize_args(action, args)
-    console.print(f"   [bold blue]⚙ {action}[/bold blue] ➔ {summary}")
+    """Displays a clean tree-connected action line for tool execution."""
+    badge, summary = summarize_args(action, args)
+    console.print(f"  [dim]└──[/dim] {badge} {summary}")
 
 
 def show_tool_status(success: bool, error_msg: str = ""):
-    """Displays status only when a failure occurs to reduce vertical noise."""
-    if not success:
-        console.print(f"   [bold red]✗ Failed:[/bold red] [dim]{error_msg}[/dim]")
+    """Displays concise execution status for tool calls."""
+    if success:
+        console.print("     [dim green]✓ Done[/dim green]")
+    else:
+        console.print(
+            f"     [bold red]✗ Failed:[/bold red] [dim red]{escape(error_msg)}[/dim red]"
+        )
 
 
 def ask_user_questions(args: dict) -> str:
+    """
+    Renders structured interactive question cards to the user and collects answers.
+    """
     questions = args.get("questions", [])
 
     if not questions:
@@ -87,9 +158,11 @@ def ask_user_questions(args: dict) -> str:
     console.print()
     console.print(
         Panel(
-            "[bold yellow]The agent needs clarification before proceeding:[/bold yellow]",
-            title="[bold cyan]Clarification Requested[/bold cyan]",
-            border_style="yellow",
+            "[bold bright_white]The agent needs your input before proceeding:[/bold bright_white]",
+            title="[bold bright_yellow]❓ Clarification Requested[/bold bright_yellow]",
+            border_style="bright_yellow",
+            box=box.ROUNDED,
+            padding=(0, 1),
         )
     )
     responses = []
@@ -99,18 +172,20 @@ def ask_user_questions(args: dict) -> str:
         options = q_item.get("options", [])
 
         console.print(
-            f"\n[bold white]Question {index}:[/bold white] [bold cyan]{q_text}[/bold cyan]"
+            f"\n[bold bright_white]Question {index}:[/bold bright_white] [bold bright_cyan]{q_text}[/bold bright_cyan]"
         )
         if options:
             for opt_idx, opt in enumerate(options, start=1):
-                console.print(f"  [bold green][{opt_idx}][/bold green] {opt}")
+                console.print(
+                    f"  [bold black on bright_green] {opt_idx} [/bold black on bright_green] {opt}"
+                )
 
             while True:
                 user_choice = console.input(
-                    "[bold yellow]Enter choice number or custom answer: [/bold yellow]"
+                    "\n  [bold bright_yellow]❯ Select option or type custom answer: [/bold bright_yellow]"
                 ).strip()
                 if not user_choice:
-                    console.print("[dim red]Answer cannot be empty.[/dim red]")
+                    console.print("  [dim red]Answer cannot be empty.[/dim red]")
                     continue
                 if user_choice.isdigit():
                     selected_num = int(user_choice)
@@ -119,28 +194,33 @@ def ask_user_questions(args: dict) -> str:
                         break
                 final_answer = user_choice
                 break
-
         else:
             while True:
                 user_choice = console.input(
-                    "[bold yellow]Your answer: [/bold yellow]"
+                    "\n  [bold bright_yellow]❯ Your answer: [/bold bright_yellow]"
                 ).strip()
                 if user_choice:
                     final_answer = user_choice
                     break
-                console.print("[dim red]Answer cannot be empty.[/dim red]")
+                console.print("  [dim red]Answer cannot be empty.[/dim red]")
 
-        return responses.append(f"{index}. {q_text} -> {final_answer}")
+        responses.append(f"{index}. {q_text} -> {final_answer}")
+        console.print(f"  [dim green]✓ Recorded: {final_answer}[/dim green]")
+
+    console.print()
+    return "USER RESPONSES:\n" + "\n".join(responses)
 
 
 def show_final_answer(message: str):
-    """Renders the final response in a clean bordered Markdown panel."""
+    """Renders the final agent response in a polished rounded Markdown canvas."""
     console.print()
     console.print(
         Panel(
             Markdown(message),
-            title="[bold green]🤖 Agent Response[/bold green]",
-            border_style="green",
+            title="[bold bright_green]✨ Task Complete[/bold bright_green]",
+            border_style="bright_green",
+            box=box.ROUNDED,
+            padding=(1, 2),
         )
     )
     console.print()
