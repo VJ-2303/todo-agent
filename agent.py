@@ -11,6 +11,7 @@ from ui import (
     console,
     show_final_answer,
     show_thought,
+    show_todos_board,
     show_tool_call,
     show_tool_status,
 )
@@ -51,7 +52,6 @@ class StarAgent:
         thought_text = decision.thought or llm_response.thinking
         show_thought(thought_text, step_num)
 
-        # Serialize clean JSON payload for message history
         assistant_payload = decision.raw_json or json.dumps(
             {
                 "thought": decision.thought,
@@ -79,6 +79,9 @@ class StarAgent:
         result = execute_tool(decision.action, decision.args, state=self.state)
 
         show_tool_status(result.success, error_msg=result.error or "")
+
+        if decision.action == "manage_todos" and result.success:
+            show_todos_board(self.state.todos)
 
         self.state.add_message(MessageRole.ASSISTANT, assistant_payload, step_num)
         self.state.add_message(

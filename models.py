@@ -31,7 +31,7 @@ class TodoItem:
     status: TaskStatus = TaskStatus.PENDING
 
     def to_dict(self) -> dict[str, Any]:
-        return {"id": self.id, "title": self.title, "status": self.status}
+        return {"id": self.id, "title": self.title, "status": self.status.value}
 
 
 @dataclass

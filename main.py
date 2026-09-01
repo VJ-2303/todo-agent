@@ -4,7 +4,7 @@ from rich.table import Table
 
 from agent import StarAgent
 from schemas import TOOLS
-from ui import console, show_banner
+from ui import console, show_banner, show_todos_board
 
 
 def print_help():
@@ -16,6 +16,7 @@ def print_help():
     cmd_table.add_column("Description")
     cmd_table.add_row("/help", "Display available commands and registered tools")
     cmd_table.add_row("/tools", "Display registered tools")
+    cmd_table.add_row("/todos, /tasks", "Display the active task progress board")
     cmd_table.add_row("/reset, /clear", "Reset conversational memory back to default")
     cmd_table.add_row("/exit, /quit", "Exit the agent terminal")
     console.print(cmd_table)
@@ -62,6 +63,12 @@ def main():
                 continue
             elif command == "/tools":
                 print_tools()
+                continue
+            elif command in ("/todos", "/tasks"):
+                if agent.state.todos:
+                    show_todos_board(agent.state.todos)
+                else:
+                    console.print("[dim]No active tasks in memory.[/dim]\n")
                 continue
 
             elif command.startswith("/"):

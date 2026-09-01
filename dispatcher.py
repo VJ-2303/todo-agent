@@ -54,7 +54,7 @@ def execute_tool(
         return execute_manage_todos(state, tool_args)
 
     if action not in TOOL_MAP:
-        available = list(TOOL_MAP.keys()) + ["manage_todoss"]
+        available = list(TOOL_MAP.keys()) + ["manage_todos"]
         err = f"Error: Tool '{action}' is not recognized. Available tools: {available}"
         return ToolResult(success=False, output=err, error=err)
 
