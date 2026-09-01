@@ -12,210 +12,162 @@ from models import TaskStatus, TodoItem
 
 console = Console()
 
+_output_sink = None
+_input_provider = None
+_todos_sink = None
+
+
+def set_output_sink(sink_fn):
+    """Sets a custom output callback (e.g. for Textual RichLog)."""
+    global _output_sink
+    _output_sink = sink_fn
+
+
+def set_input_provider(provider_fn):
+    """Sets a custom input provider callback (e.g. for Textual interactive questions)."""
+    global _input_provider
+    _input_provider = provider_fn
+
+
+def set_todos_sink(sink_fn):
+    """Sets a custom callback for rendering todos to a dedicated panel."""
+    global _todos_sink
+    _todos_sink = sink_fn
+
+
+def print_out(renderable=""):
+    """Routes rendering to output sink if registered, otherwise to console."""
+    if _output_sink:
+        _output_sink(renderable)
+    else:
+        console.print(renderable)
+
 
 def show_banner():
-    """Displays a sleek modern startup header with runtime metadata."""
+    """Displays a clean, minimal developer startup header."""
     model_name = config.MODEL_NAME or "default-model"
     dir_name = os.path.basename(os.getcwd()) or "workspace"
 
-    banner_grid = Table.grid(expand=True, padding=(0, 1))
-    banner_grid.add_column(justify="left", ratio=3)
-    banner_grid.add_column(justify="right", ratio=2)
-
-    banner_grid.add_row(
-        "[bold bright_white]⭐ StarAgent[/bold bright_white]",
-        f"[dim]model:[/dim] [bold bright_cyan]{escape(model_name)}[/bold bright_cyan]  [dim]dir:[/dim] [bold bright_yellow]{escape(dir_name)}[/bold bright_yellow]",
-    )
-    banner_grid.add_row(
-        "[dim]Autonomous ReAct Engineering Assistant[/dim]",
-        "[dim]Commands: [bold cyan]/help[/bold cyan] · [bold cyan]/tools[/bold cyan] · [bold cyan]/reset[/bold cyan] · [bold cyan]/exit[/bold cyan][/dim]",
-    )
-
-    console.print()
-    console.print(
-        Panel(
-            banner_grid,
-            box=box.ROUNDED,
-            border_style="bright_blue",
-            padding=(0, 1),
-        )
-    )
-    console.print()
+    print_out(f"[bold #38bdf8]StarAgent[/bold #38bdf8] [dim #64748b]({escape(model_name)} @ {escape(dir_name)})[/dim #64748b]")
+    print_out("[dim #475569]Type your instruction below or use /help for commands.[/dim #475569]")
+    print_out("[dim #1e293b]" + "─" * 60 + "[/dim #1e293b]")
 
 
 def show_chat_response(message: str):
-    console.print()
-    console.print(
-        Panel(
-            Markdown(message),
-            title="[bold bright_cyan]💬 StarAgent[/bold bright_cyan]",
-            border_style="bright_blue",
-            box=box.ROUNDED,
-            padding=(0, 2),
-        )
-    )
-    console.print()
+    """Renders direct conversational markdown from the agent."""
+    print_out()
+    print_out("[bold #38bdf8]StarAgent:[/bold #38bdf8]")
+    print_out(Markdown(message))
+    print_out()
 
 
-def summarize_args(action: str, args: dict) -> tuple[str, str]:
+def summarize_args(action: str, args: dict) -> tuple[str, str, str]:
+    """Returns (tag, color_hex, summary)"""
     if action == "read_file":
-        target = escape(str(args.get("path", "unknown")))
-        return (
-            "[bold black on bright_cyan] READ [/bold black on bright_cyan]",
-            f"[bright_white]{target}[/bright_white]",
-        )
+        return "read", "#38bdf8", escape(str(args.get("path", "unknown")))
 
     if action == "write_file":
-        target = escape(str(args.get("path", "unknown")))
-        return (
-            "[bold black on bright_green] WRITE [/bold black on bright_green]",
-            f"[bright_white]{target}[/bright_white]",
-        )
+        return "write", "#34d399", escape(str(args.get("path", "unknown")))
 
     if action == "replace_in_file":
-        target = escape(str(args.get("path", "unknown")))
-        return (
-            "[bold black on bright_yellow] EDIT [/bold black on bright_yellow]",
-            f"[bright_white]{target}[/bright_white] [dim](surgical edit)[/dim]",
-        )
+        return "edit", "#fbbf24", escape(str(args.get("path", "unknown")))
 
     if action == "run_command":
         cmd = str(args.get("command", ""))
         flattened_cmd = " ".join(cmd.split())
-        if len(flattened_cmd) > 70:
-            flattened_cmd = flattened_cmd[:67] + "..."
-        return (
-            "[bold black on yellow] RUN [/bold black on yellow]",
-            f"[yellow]{escape(flattened_cmd)}[/yellow]",
-        )
+        if len(flattened_cmd) > 60:
+            flattened_cmd = flattened_cmd[:57] + "..."
+        return "run", "#a78bfa", escape(flattened_cmd)
 
     if action == "grep_search":
         query = escape(str(args.get("query", "")))
         path = escape(str(args.get("path", ".")))
-        return (
-            "[bold black on bright_magenta] GREP [/bold black on bright_magenta]",
-            f"query [bright_magenta]'{query}'[/bright_magenta] in [dim]{path}[/dim]",
-        )
+        return "grep", "#22d3ee", f"'{query}' in {path}"
 
     if action == "find_files":
         pattern = escape(str(args.get("pattern", "*")))
         directory = escape(str(args.get("directory", ".")))
-        return (
-            "[bold black on cyan] FIND [/bold black on cyan]",
-            f"pattern [bright_cyan]'{pattern}'[/bright_cyan] in [dim]{directory}[/dim]",
-        )
+        return "find", "#38bdf8", f"'{pattern}' in {directory}"
 
     if action == "list_files":
         directory = escape(str(args.get("directory", ".")))
-        return (
-            "[bold black on blue] LIST [/bold black on blue]",
-            f"dir [bright_white]{directory}[/bright_white]",
-        )
+        return "list", "#818cf8", escape(directory)
 
     if action == "search_web":
         query = escape(str(args.get("query", "")))
-        return (
-            "[bold black on bright_magenta] WEB [/bold black on bright_magenta]",
-            f"search [bright_magenta]'{query}'[/bright_magenta]",
-        )
+        return "web", "#c084fc", f"'{query}'"
 
     if action == "fetch_web_page":
         url = escape(str(args.get("url", "")))
-        return (
-            "[bold black on bright_cyan] FETCH [/bold black on bright_cyan]",
-            f"[bright_cyan]{url}[/bright_cyan]",
-        )
+        return "fetch", "#2dd4bf", url
+
     if action == "manage_todos":
-        act = escape(str(args.get("action", "list")))
+        act = str(args.get("action", "list"))
         if act == "update":
             tid = args.get("todo_id", "?")
             st = args.get("status", "?")
-            detail = f"update #{tid} -> [bold bright_yellow]{st}[/bold bright_yellow]"
+            return "todos", "#2dd4bf", f"update #{tid} -> {st}"
         elif act == "init":
             count = len(args.get("todos", []))
-            detail = f"init [bold bright_cyan]{count} subtasks[/bold bright_cyan]"
+            return "todos", "#2dd4bf", f"init {count} subtasks"
         elif act == "add":
             title = escape(str(args.get("title", "")))
-            detail = f"add '[bright_cyan]{title}[/bright_cyan]'"
-        else:
-            detail = "list tasks"
-        return (
-            "[bold black on bright_blue] TODOS [/bold black on bright_blue]",
-            detail,
-        )
+            return "todos", "#2dd4bf", f"add '{title}'"
+        return "todos", "#2dd4bf", "list tasks"
 
-    return (
-        f"[bold black on white] {escape(action.upper())} [/bold black on white]",
-        f"[dim]{escape(str(args))}[/dim]",
-    )
+    return action, "#94a3b8", escape(str(args))
 
 
 def show_thought(thought: str, step_num: int | None = None):
-    """Renders agent thought with a high-contrast step badge."""
-    if step_num:
-        step_badge = f"[bold black on bright_cyan] STEP {step_num:02d} [/bold black on bright_cyan] "
-    else:
-        step_badge = ""
-
-    console.print(f"\n{step_badge}[bright_cyan]💭 {escape(thought)}[/bright_cyan]")
+    """Renders agent thought with clean step indicator."""
+    step_prefix = f"[dim #64748b]step {step_num:02d}[/dim #64748b] " if step_num else ""
+    print_out(f"\n{step_prefix}[#38bdf8]thinking:[/#38bdf8] [dim #94a3b8]{escape(thought)}[/dim #94a3b8]")
 
 
 def show_tool_call(action: str, args: dict):
     """Displays a clean tree-connected action line for tool execution."""
-    badge, summary = summarize_args(action, args)
-    console.print(f"  [dim]└──[/dim] {badge} {summary}")
+    tag, color, summary = summarize_args(action, args)
+    print_out(f"  [dim #334155]└──[/dim #334155] [bold {color}]{tag}[/bold {color}] [#e2e8f0]{summary}[/#e2e8f0]")
 
 
 def show_tool_status(success: bool, error_msg: str = ""):
     """Displays concise execution status for tool calls."""
     if success:
-        console.print("     [dim green]✓ Done[/dim green]")
+        print_out("      [#34d399]→ ok[/#34d399]")
     else:
-        console.print(
-            f"     [bold red]✗ Failed:[/bold red] [dim red]{escape(error_msg)}[/dim red]"
-        )
+        print_out(f"      [#f87171]→ error:[/#f87171] [dim #fca5a5]{escape(error_msg)}[/dim #fca5a5]")
 
 
 def ask_user_questions(args: dict) -> str:
     """
-    Renders structured interactive question cards to the user and collects answers.
+    Renders structured interactive question prompts to the user and collects answers.
     """
     questions = args.get("questions", [])
 
     if not questions:
         return "No questions provided."
 
-    console.print()
-    console.print(
-        Panel(
-            "[bold bright_white]The agent needs your input before proceeding:[/bold bright_white]",
-            title="[bold bright_yellow]❓ Clarification Requested[/bold bright_yellow]",
-            border_style="bright_yellow",
-            box=box.ROUNDED,
-            padding=(0, 1),
-        )
-    )
+    print_out("\n[bold #fbbf24]Clarification Requested:[/bold #fbbf24]")
     responses = []
 
     for index, q_item in enumerate(questions, start=1):
         q_text = q_item.get("question", "Clarification needed:")
         options = q_item.get("options", [])
 
-        console.print(
-            f"\n[bold bright_white]Question {index}:[/bold bright_white] [bold bright_cyan]{q_text}[/bold bright_cyan]"
-        )
+        print_out(f"\n[bold white]Question {index}:[/bold white] [#38bdf8]{escape(q_text)}[/#38bdf8]")
         if options:
             for opt_idx, opt in enumerate(options, start=1):
-                console.print(
-                    f"  [bold black on bright_green] {opt_idx} [/bold black on bright_green] {opt}"
-                )
+                print_out(f"  [dim #64748b]{opt_idx}.[/dim #64748b] {opt}")
 
             while True:
-                user_choice = console.input(
-                    "\n  [bold bright_yellow]❯ Select option or type custom answer: [/bold bright_yellow]"
-                ).strip()
+                if _input_provider:
+                    user_choice = _input_provider(f"Question {index} (1-{len(options)} or custom): ").strip()
+                else:
+                    user_choice = console.input(
+                        f"\n  [bold #fbbf24]> Select (1-{len(options)}) or type answer: [/bold #fbbf24]"
+                    ).strip()
                 if not user_choice:
-                    console.print("  [dim red]Answer cannot be empty.[/dim red]")
+                    print_out("  [dim #f87171]Answer cannot be empty.[/dim #f87171]")
                     continue
                 if user_choice.isdigit():
                     selected_num = int(user_choice)
@@ -226,63 +178,45 @@ def ask_user_questions(args: dict) -> str:
                 break
         else:
             while True:
-                user_choice = console.input(
-                    "\n  [bold bright_yellow]❯ Your answer: [/bold bright_yellow]"
-                ).strip()
+                if _input_provider:
+                    user_choice = _input_provider(f"Question {index}: ").strip()
+                else:
+                    user_choice = console.input(
+                        "\n  [bold #fbbf24]> Your answer: [/bold #fbbf24]"
+                    ).strip()
                 if user_choice:
                     final_answer = user_choice
                     break
-                console.print("  [dim red]Answer cannot be empty.[/dim red]")
+                print_out("  [dim #f87171]Answer cannot be empty.[/dim #f87171]")
 
         responses.append(f"{index}. {q_text} -> {final_answer}")
-        console.print(f"  [dim green]✓ Recorded: {final_answer}[/dim green]")
+        print_out(f"  [dim #34d399]→ recorded: {final_answer}[/dim #34d399]")
 
-    console.print()
+    print_out()
     return "USER RESPONSES:\n" + "\n".join(responses)
 
 
 def show_todos_board(todos: list[TodoItem]):
-    """Renders a sleek, minimal subtask progress board."""
+    """Renders a sleek, minimal subtask checklist in the dedicated panel or log."""
+    if _todos_sink:
+        _todos_sink(todos)
+        return
+
     if not todos:
         return
 
-    table = Table(box=box.SIMPLE_HEAD, expand=True, padding=(0, 1))
-    table.add_column("#", justify="center", style="dim", width=4)
-    table.add_column("Status", width=14)
-    table.add_column("Subtask", style="bold bright_white")
-
+    print_out("\n[bold #2dd4bf]Task Plan:[/bold #2dd4bf]")
     for item in todos:
         if item.status == TaskStatus.COMPLETED:
-            status_badge = "[bold green]✓ COMPLETED[/bold green]"
-            title_styled = f"[dim strike bright_white]{escape(item.title)}[/dim strike bright_white]"
+            print_out(f"  [#34d399][✓][/#34d399] #{item.id}: [dim strike #64748b]{escape(item.title)}[/dim strike #64748b]")
         else:
-            status_badge = "[dim]PENDING[/dim]"
-            title_styled = escape(item.title)
-
-        table.add_row(str(item.id), status_badge, title_styled)
-
-    console.print()
-    console.print(
-        Panel(
-            table,
-            title="[bold bright_cyan]📋 Active Task Plan[/bold bright_cyan]",
-            border_style="bright_cyan",
-            box=box.ROUNDED,
-            padding=(0, 1),
-        )
-    )
+            print_out(f"  [dim #475569][ ][/dim #475569] #{item.id}: [#e2e8f0]{escape(item.title)}[/#e2e8f0]")
+    print_out()
 
 
 def show_final_answer(message: str):
-    """Renders the final agent response in a polished rounded Markdown canvas."""
-    console.print()
-    console.print(
-        Panel(
-            Markdown(message),
-            title="[bold bright_green]✨ Task Complete[/bold bright_green]",
-            border_style="bright_green",
-            box=box.ROUNDED,
-            padding=(1, 2),
-        )
-    )
-    console.print()
+    """Renders the final agent response in clean markdown."""
+    print_out()
+    print_out("[bold #34d399]StarAgent (completed):[/bold #34d399]")
+    print_out(Markdown(message))
+    print_out()

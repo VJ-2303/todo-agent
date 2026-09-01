@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from typing import Any
 
@@ -5,6 +6,11 @@ import litellm
 from litellm import completion
 
 import config
+
+litellm.suppress_debug_info = True
+litellm.drop_params = True
+litellm.set_verbose = False
+os.environ["LITELLM_LOG"] = "ERROR"
 
 
 @dataclass

@@ -43,16 +43,12 @@ def parse_agent_response(raw_text: str) -> tuple[bool, AgentDecision | None, str
     if not candidate:
         clean_text = raw_text.strip()
         decision = AgentDecision(
-            thought="Directv conversational response",
-            action="chat",
-            args={"messages": clean_text},
+            thought="Direct conversational response.",
+            action="message",
+            args={"content": clean_text, "message": clean_text},
             raw_json="",
         )
-        return (
-            True,
-            decision,
-            "",
-        )
+        return True, decision, ""
 
     try:
         data = json.loads(candidate)

@@ -8,7 +8,7 @@ from parser import parse_agent_response
 from prompts import build_system_prompt
 from ui import (
     ask_user_questions,
-    console,
+    print_out,
     show_chat_response,
     show_final_answer,
     show_thought,
@@ -28,10 +28,9 @@ class StarAgent:
 
     def step(self, step_num: int = 1) -> tuple[bool, str]:
         try:
-            with console.status("[dim]Thinking...[/dim]", spinner="dots"):
-                llm_response = self.llm.generate(messages=self.state.get_llm_messages())
+            llm_response = self.llm.generate(messages=self.state.get_llm_messages())
         except Exception as e:
-            console.print(f"\n[bold red]✗ Connection Error:[/bold red] {e!s}")
+            print_out(f"\n[bold red][FAIL] Connection Error:[/bold red] {e!s}")
             return True, ""
 
         success, decision, error_msg = parse_agent_response(llm_response.content)
@@ -45,8 +44,8 @@ class StarAgent:
                 'Please output strictly a single valid JSON object: {"thought": "...", "action": "tool_name", "args": {...}}'
             )
             self.state.add_message(MessageRole.USER, retry_prompt, step_num=step_num)
-            console.print(
-                f"  [dim yellow]⚠ Response format issue ({error_msg}) — Retrying step...[/dim yellow]"
+            print_out(
+                f"  [dim yellow][!] Response format issue ({error_msg}) — Retrying step...[/dim yellow]"
             )
             return False, error_msg
 
@@ -62,7 +61,11 @@ class StarAgent:
         )
 
         if decision.is_chat:
-            chat_msg = decision.args.get("message", "")
+            chat_msg = (
+                decision.args.get("content")
+                or decision.args.get("message")
+                or decision.args.get("messages", "")
+            )
             self.state.add_message(MessageRole.ASSISTANT, assistant_payload, step_num)
             self.state.is_finished = True
             self.state.final_result = chat_msg
@@ -118,7 +121,7 @@ class StarAgent:
                 return result
             step_num += 1
 
-        console.print(
+        print_out(
             "\n[bold red]Agent Stopped:[/bold red] Maximum step limit reached."
         )
         return "Task failed: Step limit reached."

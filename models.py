@@ -63,7 +63,7 @@ class AgentDecision:
 
     @property
     def is_chat(self) -> bool:
-        return self.action == "chat"
+        return self.action in ("chat", "message", "respond")
 
 
 @dataclass
