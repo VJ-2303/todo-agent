@@ -41,7 +41,18 @@ def parse_agent_response(raw_text: str) -> tuple[bool, AgentDecision | None, str
 
     candidate = extract_json_block(raw_text)
     if not candidate:
-        return False, None, "No valid JSON object structure found (missing '{' or '}')."
+        clean_text = raw_text.strip()
+        decision = AgentDecision(
+            thought="Directv conversational response",
+            action="chat",
+            args={"messages": clean_text},
+            raw_json="",
+        )
+        return (
+            True,
+            decision,
+            "",
+        )
 
     try:
         data = json.loads(candidate)

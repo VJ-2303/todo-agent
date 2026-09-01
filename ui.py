@@ -43,10 +43,21 @@ def show_banner():
     console.print()
 
 
+def show_chat_response(message: str):
+    console.print()
+    console.print(
+        Panel(
+            Markdown(message),
+            title="[bold bright_cyan]💬 StarAgent[/bold bright_cyan]",
+            border_style="bright_blue",
+            box=box.ROUNDED,
+            padding=(0, 2),
+        )
+    )
+    console.print()
+
+
 def summarize_args(action: str, args: dict) -> tuple[str, str]:
-    """
-    Extracts high-signal arguments and returns a styled badge tag + formatted details.
-    """
     if action == "read_file":
         target = escape(str(args.get("path", "unknown")))
         return (

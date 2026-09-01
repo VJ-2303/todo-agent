@@ -9,6 +9,7 @@ from prompts import build_system_prompt
 from ui import (
     ask_user_questions,
     console,
+    show_chat_response,
     show_final_answer,
     show_thought,
     show_todos_board,
@@ -60,11 +61,20 @@ class StarAgent:
             }
         )
 
+        if decision.is_chat:
+            chat_msg = decision.args.get("message", "")
+            self.state.add_message(MessageRole.ASSISTANT, assistant_payload, step_num)
+            self.state.is_finished = True
+            self.state.final_result = chat_msg
+            show_chat_response(chat_msg)
+            return True, chat_msg
+
         if decision.is_final_answer:
             final_msg = decision.args.get("message", "Task completed.")
             self.state.add_message(MessageRole.ASSISTANT, assistant_payload, step_num)
             self.state.is_finished = True
             self.state.final_result = final_msg
+            show_final_answer(final_msg)
             return True, final_msg
 
         if decision.is_clarification:
@@ -105,7 +115,6 @@ class StarAgent:
             is_finished, result = self.step(step_num)
 
             if is_finished:
-                show_final_answer(result)
                 return result
             step_num += 1
 

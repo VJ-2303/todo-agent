@@ -61,6 +61,10 @@ class AgentDecision:
         """Helper property: True if the model is asking the user a question."""
         return self.action == "ask_user"
 
+    @property
+    def is_chat(self) -> bool:
+        return self.action == "chat"
+
 
 @dataclass
 class ToolResult:
