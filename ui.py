@@ -48,8 +48,12 @@ def show_banner():
     model_name = config.MODEL_NAME or "default-model"
     dir_name = os.path.basename(os.getcwd()) or "workspace"
 
-    print_out(f"[bold #38bdf8]StarAgent[/bold #38bdf8] [dim #64748b]({escape(model_name)} @ {escape(dir_name)})[/dim #64748b]")
-    print_out("[dim #475569]Type your instruction below or use /help for commands.[/dim #475569]")
+    print_out(
+        f"[bold #38bdf8]StarAgent[/bold #38bdf8] [dim #64748b]({escape(model_name)} @ {escape(dir_name)})[/dim #64748b]"
+    )
+    print_out(
+        "[dim #475569]Type your instruction below or use /help for commands.[/dim #475569]"
+    )
     print_out("[dim #1e293b]" + "─" * 60 + "[/dim #1e293b]")
 
 
@@ -121,13 +125,15 @@ def summarize_args(action: str, args: dict) -> tuple[str, str, str]:
 def show_thought(thought: str, step_num: int | None = None):
     """Renders agent thought with clean step indicator."""
     step_prefix = f"[dim #64748b]step {step_num:02d}[/dim #64748b] " if step_num else ""
-    print_out(f"\n{step_prefix}[#38bdf8]thinking:[/#38bdf8] [dim #94a3b8]{escape(thought)}[/dim #94a3b8]")
+    print_out(f"\n{step_prefix}[dim #94a3b8] thinking: {escape(thought)}[/dim #94a3b8]")
 
 
 def show_tool_call(action: str, args: dict):
     """Displays a clean tree-connected action line for tool execution."""
     tag, color, summary = summarize_args(action, args)
-    print_out(f"  [dim #334155]└──[/dim #334155] [bold {color}]{tag}[/bold {color}] [#e2e8f0]{summary}[/#e2e8f0]")
+    print_out(
+        f"  [dim #334155]└──[/dim #334155] [bold {color}]{tag}[/bold {color}] [#e2e8f0]{summary}[/#e2e8f0]"
+    )
 
 
 def show_tool_status(success: bool, error_msg: str = ""):
@@ -135,7 +141,9 @@ def show_tool_status(success: bool, error_msg: str = ""):
     if success:
         print_out("      [#34d399]→ ok[/#34d399]")
     else:
-        print_out(f"      [#f87171]→ error:[/#f87171] [dim #fca5a5]{escape(error_msg)}[/dim #fca5a5]")
+        print_out(
+            f"      [#f87171]→ error:[/#f87171] [dim #fca5a5]{escape(error_msg)}[/dim #fca5a5]"
+        )
 
 
 def ask_user_questions(args: dict) -> str:
@@ -154,14 +162,18 @@ def ask_user_questions(args: dict) -> str:
         q_text = q_item.get("question", "Clarification needed:")
         options = q_item.get("options", [])
 
-        print_out(f"\n[bold white]Question {index}:[/bold white] [#38bdf8]{escape(q_text)}[/#38bdf8]")
+        print_out(
+            f"\n[bold white]Question {index}:[/bold white] [#38bdf8]{escape(q_text)}[/#38bdf8]"
+        )
         if options:
             for opt_idx, opt in enumerate(options, start=1):
                 print_out(f"  [dim #64748b]{opt_idx}.[/dim #64748b] {opt}")
 
             while True:
                 if _input_provider:
-                    user_choice = _input_provider(f"Question {index} (1-{len(options)} or custom): ").strip()
+                    user_choice = _input_provider(
+                        f"Question {index} (1-{len(options)} or custom): "
+                    ).strip()
                 else:
                     user_choice = console.input(
                         f"\n  [bold #fbbf24]> Select (1-{len(options)}) or type answer: [/bold #fbbf24]"
@@ -208,9 +220,13 @@ def show_todos_board(todos: list[TodoItem]):
     print_out("\n[bold #2dd4bf]Task Plan:[/bold #2dd4bf]")
     for item in todos:
         if item.status == TaskStatus.COMPLETED:
-            print_out(f"  [#34d399][✓][/#34d399] #{item.id}: [dim strike #64748b]{escape(item.title)}[/dim strike #64748b]")
+            print_out(
+                f"  [#34d399][✓][/#34d399] #{item.id}: [dim strike #64748b]{escape(item.title)}[/dim strike #64748b]"
+            )
         else:
-            print_out(f"  [dim #475569][ ][/dim #475569] #{item.id}: [#e2e8f0]{escape(item.title)}[/#e2e8f0]")
+            print_out(
+                f"  [dim #475569][ ][/dim #475569] #{item.id}: [#e2e8f0]{escape(item.title)}[/#e2e8f0]"
+            )
     print_out()
 
 

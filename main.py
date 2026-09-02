@@ -11,6 +11,7 @@ from rich.table import Table
 from textual import work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
+from textual.suggester import SuggestFromList
 from textual.widgets import Input, Label, RichLog, Static
 
 import config
@@ -19,6 +20,17 @@ from agent import StarAgent
 from models import TaskStatus, TodoItem
 from schemas import TOOLS
 from ui import show_banner, show_todos_board
+
+SLASH_COMMANDS = [
+    "/help",
+    "/tools",
+    "/todos",
+    "/tasks",
+    "/reset",
+    "/clear",
+    "/exit",
+    "/quit",
+]
 
 
 def get_help_table() -> Table:
@@ -101,6 +113,10 @@ class StarAgentApp(App):
         padding: 0 1;
     }
 
+    #prompt_input .input--suggestion {
+        color: #475569;
+    }
+
     #prompt_input:hover {
         border: tall #222222;
         background: #000000;
@@ -140,6 +156,7 @@ class StarAgentApp(App):
                 yield Static("[dim #475569]No active tasks[/dim #475569]", id="todos_view")
         yield Input(
             placeholder="Type your instruction or /help, /todos, /exit...",
+            suggester=SuggestFromList(SLASH_COMMANDS, case_sensitive=False),
             id="prompt_input",
         )
         yield Label(self.get_footer_text("[dim #475569]ready[/dim #475569]"), id="footer_bar")
@@ -243,10 +260,16 @@ class StarAgentApp(App):
         if command in ("/exit", "/quit"):
             self.exit()
             return
-        elif command in ("/reset", "/clear"):
+        elif command == "/clear":
+            log.clear()
+            show_banner()
+            return
+        elif command == "/reset":
             self.agent.reset()
             self.update_todos_view([])
-            log.write("[green][+] Conversation memory has been reset.[/green]\n")
+            log.clear()
+            show_banner()
+            log.write("[green][+] Conversation memory and logs have been reset.[/green]\n")
             return
         elif command == "/help":
             log.write(get_help_table())
